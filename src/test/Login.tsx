@@ -1,48 +1,39 @@
-import React, {useState} from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
-import {initDatabase, getUserByPassword, insertLoginUser, getAllUsers} from '../db';
+// LoginScreen.js
+
+import React, {useEffect, useState} from 'react';
+import {View, Text, TouchableOpacity, StyleSheet, TextInput} from 'react-native';
+import {initDatabase, getUsersByPassword,insertLoginUsersFromAPI} from './database';
 
 const LoginScreen = ({navigation}) => {
   const [password, setPassword] = useState('');
   const [loginError, setLoginError] = useState(null);
+  useEffect(() => {
+    initDatabase();
+    // Fetch and insert users from API into loginuser table
+    insertLoginUsersFromAPI();
+  }, []);
 
-  // Ensure the database is initialized and the login user is inserted
-  initDatabase();
-  insertLoginUser();
+const handleLogin = () => {
+  getUsersByPassword(
+    password,
+    users => {
+      if (users.length > 0) {
+        // User found, proceed with login
+        console.log('Login successful. User:', users[0]);
+        // Navigate to another page
+        navigation.navigate('Map');
+      } else {
+        // User not found
+        console.log('Incorrect password. Please try again.');
+      }
+    },
+    error => {
+      console.error('Error getting users by password', error);
+    },
+  );
+};
 
-  const handleLogin = () => {
-    setLoginError(null);
 
-    getUserByPassword(
-      password,
-      user => {
-        if (user) {
-          // User found, proceed with login
-          console.log('Login successful. User:', user);
-          getAllUsers(
-           // users => console.log('All users:', users),
-            //error => console.error('Error retrieving users', error),
-          );
-          // Add navigation or other logic here for successful login
-          navigation.navigate('Test2');
-        } else {
-          // User not found
-          setLoginError('Incorrect password. Please try again.');
-        }
-      },
-      error => {
-        // Handle error
-        console.error('Login error:', error);
-        setLoginError('An error occurred during login. Please try again.');
-      },
-    );
-  };
 
   return (
     <View style={styles.container}>

@@ -9,105 +9,86 @@ const db = SQLite.openDatabase(
   error => console.error('Error opening database', error),
 );
 
-// const initDatabase = () => {
-//   // Create a table (for demonstration purposes)
-//   db.transaction(tx => {
-//     tx.executeSql(
-//       'CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, email TEXT)',
-//       [],
-//       (_, resultSet) => console.log('Table created successfully', resultSet),
-//       (_, error) => console.error('Error creating table', error),
-//     );
-//   });
-// };
-
-const insertUser = (name, email) => {
+const initDatabase = () => {
+  // Create the loginuser table (for login purposes)
   db.transaction(tx => {
     tx.executeSql(
-      'INSERT INTO users (name, email) VALUES (?, ?)',
-      [name, email],
-      (_, resultSet) => console.log('Data inserted successfully', resultSet),
-      (_, error) => console.error('Error inserting data', error),
+      'CREATE TABLE IF NOT EXISTS loginuser (user_id INTEGER PRIMARY KEY, user_name TEXT, user_pass TEXT)',
+      [],
+      (_, resultSet) =>
+        console.log('loginuser table created successfully', resultSet),
+      (_, error) => console.error('Error creating loginuser table', error),
     );
   });
 };
 
-const getUsers = (successCallback, errorCallback) => {
+const insertLoginUser = () => {
+  // Insert a user with the password 'bd123' into the loginuser table
   db.transaction(tx => {
     tx.executeSql(
-      'SELECT * FROM users',
-      [],
+      'INSERT INTO loginuser (user_name, user_pass) VALUES (?, ?)',
+      ['admin', 'bd123'],
+      (_, resultSet) =>
+       {
+        if (result.rows.length === 0) {
+              // If the user doesn't exist, insert the login user
+              insertLoginUser();
+            } else {
+              console.log('User with password bd123 already exists');
+            }
+          },
+        console.log('Login user inserted successfully', resultSet),
+      (_, error) => console.error('Error inserting login user', error),
+    );
+  });
+};
+
+const getUserByPassword = (password, successCallback, errorCallback) => {
+  db.transaction(tx => {
+    tx.executeSql(
+      'SELECT * FROM loginuser WHERE user_pass = ?',
+      [password],
       (_, resultSet) => {
         console.log('Query successful', resultSet);
 
         // Process the query result here
         if (resultSet.rows.length > 0) {
-          const users = [];
-          for (let i = 0; i < resultSet.rows.length; i++) {
-            const row = resultSet.rows.item(i);
-            users.push(row);
-          }
-          successCallback(users);
+          const user = resultSet.rows.item(0);
+          successCallback(user);
+        } else {
+          successCallback(null); // User not found
         }
       },
       (_, error) => {
-        console.error('Error querying data', error);
+        console.error('Error querying user', error);
         errorCallback(error);
       },
     );
   });
 };
 
+const getAllUsers = (successCallback, errorCallback) => {
+  db.transaction(tx => {
+    tx.executeSql(
+      'SELECT * FROM loginuser',
+      [],
+      (_, resultSet) => {
+        console.log('Query successful', resultSet);
 
-// ... (previous code)
-
-const getUserByPassword = (password, successCallback, errorCallback) => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'SELECT * FROM LoginTable WHERE password = ?',
-        [password],
-        (_, resultSet) => {
-          console.log('Query successful', resultSet);
-  
-          // Process the query result here
-          if (resultSet.rows.length > 0) {
-            const user = resultSet.rows.item(0);
-            successCallback(user);
-          } else {
-            successCallback(null); // User not found
-          }
-        },
-        (_, error) => {
-          console.error('Error querying user', error);
-          errorCallback(error);
+        // Process the query result here
+        const users = [];
+        for (let i = 0; i < resultSet.rows.length; i++) {
+          const user = resultSet.rows.item(i);
+          users.push(user);
         }
-      );
-    });
-  };
-  
-  const initDatabase = () => {
-    // Create the LoginTable (for login purposes)
-    db.transaction(tx => {
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS LoginTable (user_id INTEGER PRIMARY KEY, user_name TEXT, user_fullname TEXT, user_pass TEXT, role_id INTEGER, project_visitor_bn TEXT, description TEXT)',
-        [],
-        (_, resultSet) => console.log('LoginTable created successfully', resultSet),
-        (_, error) => console.error('Error creating LoginTable', error)
-      );
-    });
-  };
-  
-  const insertLoginData = () => {
-    // Insert the provided login data into the LoginTable
-    db.transaction(tx => {
-      tx.executeSql(
-        'INSERT INTO LoginTable (user_id, user_name, user_fullname, user_pass, role_id, project_visitor_bn, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [99, 'admin@gmail.com', 'Admin', 'bwdb1234', 99, 'Admin', 'Admin'],
-        (_, resultSet) => console.log('Login data inserted successfully', resultSet),
-        (_, error) => console.error('Error inserting login data', error)
-      );
-    });
-  };
-  
-  export { initDatabase, insertUser, getUsers, getUserByPassword, insertLoginData };
+        successCallback(users);
+      },
+      (_, error) => {
+        console.error('Error querying users', error);
+        errorCallback(error);
+      },
+    );
+  });
+};
 
+export {initDatabase, insertLoginUser, getUserByPassword, getAllUsers};
